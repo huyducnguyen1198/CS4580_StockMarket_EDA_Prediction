@@ -93,11 +93,36 @@ if __name__ == "__main__":
     stock_df["Previous Reported EPS"], stock_df["Previous Surprise Earning"] = zip(
         *stock_df["Date"].apply(get_previous_earnings))
     #zip help to unpack tupe
-    stock_df['Close_Open Prev_Next Day'] = stock_df['Open'] - stock_df['Close'].shift(1)
-    stock_df['Close_Open Prev_Next Day'] = stock_df['Close_Open Prev_Next Day'].shift(periods=-1)
+    #calculate change percentage of open current day and close previous day
+    stock_df['Close_Open Prev_Next Day %'] = ((stock_df['Open'] - stock_df['Close'].shift(1)) / stock_df['Close'].shift(1)) * 100
+    stock_df['Close_Open Prev_Next Day %'] = stock_df['Close_Open Prev_Next Day %'].shift(periods=-1)
 
-    amd_df['AMD_Close_Open Prev_Next Day'] = amd_df['AMD_Open'] - amd_df['AMD_Close'].shift(1)
-    amd_df['AMD_Close_Open Prev_Next Day'] = amd_df['AMD_Close_Open Prev_Next Day'].shift(periods=-1)
+    stock_df['5_day_avg'] = stock_df['Close'].rolling(window=5).mean()
+    stock_df['10_day_avg'] = stock_df['Close'].rolling(window=10).mean()
+    stock_df['20_day_avg'] = stock_df['Close'].rolling(window=20).mean()
+    stock_df['daily_return'] = stock_df['Close'].pct_change() * 100
+    rolling_mean = stock_df['Close'].rolling(window=20).mean()
+    rolling_std = stock_df['Close'].rolling(window=20).std()
+    stock_df['Bollinger_Upper'] = rolling_mean + (rolling_std * 2)
+    stock_df['Bollinger_Lower'] = rolling_mean - (rolling_std * 2)
+    delta = stock_df['Close'].diff()
+    gain = (delta.where(delta > 0, 0))
+    loss = (-delta.where(delta < 0, 0))
+    avg_gain = gain.rolling(window=14).mean()
+    avg_loss = loss.rolling(window=14).mean()
+    rs = avg_gain / avg_loss
+    stock_df['RSI'] = 100 - (100 / (1 + rs))
+
+    exp1 = stock_df['Close'].ewm(span=12, adjust=False).mean()
+    exp2 = stock_df['Close'].ewm(span=26, adjust=False).mean()
+    stock_df['MACD'] = exp1 - exp2
+    stock_df['Signal_Line'] = stock_df['MACD'].ewm(span=9, adjust=False).mean()
+
+    stock_df['Historical_Volatility'] = stock_df['daily_return'].rolling(window=21).std()
+    stock_df['OpenVolume'] = stock_df['Open'] * stock_df['Volume']
+
+    amd_df['AMD_Close_Open Prev_Next Day %'] = ((amd_df['AMD_Open'] - amd_df['AMD_Close'].shift(1)) / amd_df['AMD_Close'].shift(1)) * 100
+    amd_df['AMD_Close_Open Prev_Next Day %'] = amd_df['AMD_Close_Open Prev_Next Day %'].shift(periods=-1)
     stock_df = stock_df.merge(amd_df, on='Date', how='inner')
 
     stock_df['Diff'] = stock_df['Close'] - stock_df['Open']
