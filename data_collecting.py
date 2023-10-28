@@ -51,15 +51,15 @@ if __name__ == "__main__":
     # Load stock data
     stock_df = pd.read_csv("NVDA.csv")
     amd_df = pd.read_csv("AMD.csv")
+    nasdaq_df = pd.read_csv("NASDAQ.csv")
     stock_df['Date'] = pd.to_datetime(stock_df['Date'])
     amd_df['Date'] = pd.to_datetime(amd_df['Date'])
-
+    nasdaq_df['Date'] = pd.to_datetime(nasdaq_df['Date'])
     earnings_df['Date'] = earnings_df['Date'].str.split(',').str[0] + ',' + earnings_df['Date'].str.split(',').str[1]
 
     # Convert the Date column to datetime format
     earnings_df['Date'] = pd.to_datetime(earnings_df['Date'])
     earnings_df = earnings_df.iloc[::-1].reset_index(drop=True)
-    print(earnings_df.head())
     # Calculate days to the next earnings for each date in stock data
     def days_to_next_earnings(stock_date):
         next_earnings_date = earnings_df[earnings_df['Date'] > stock_date]['Date'].min()
@@ -123,7 +123,14 @@ if __name__ == "__main__":
 
     amd_df['AMD_Close_Open Prev_Next Day %'] = ((amd_df['AMD_Open'] - amd_df['AMD_Close'].shift(1)) / amd_df['AMD_Close'].shift(1)) * 100
     amd_df['AMD_Close_Open Prev_Next Day %'] = amd_df['AMD_Close_Open Prev_Next Day %'].shift(periods=-1)
+    amd_df['AMD_Daily_Return'] = amd_df['AMD_Close'].pct_change() * 100
+
+    nasdaq_df['NASDAQ_Close_Open Prev_Next Day %'] = ((nasdaq_df['NASDAQ_Open'] - nasdaq_df['NASDAQ_Close'].shift(1)) / nasdaq_df[
+        'NASDAQ_Close'].shift(1)) * 100
+    nasdaq_df['NASDAQ_Close_Open Prev_Next Day %'] = nasdaq_df['NASDAQ_Close_Open Prev_Next Day %'].shift(periods=-1)
+    nasdaq_df['NASDAQ_Daily_Return'] =  nasdaq_df['NASDAQ_Close'].pct_change() * 100
     stock_df = stock_df.merge(amd_df, on='Date', how='inner')
+    stock_df = stock_df.merge(nasdaq_df, on='Date', how='inner')
 
     stock_df['Diff'] = stock_df['Close'] - stock_df['Open']
     stock_df['Stock rise for the next day?'] = stock_df['Diff'].shift(-1)
