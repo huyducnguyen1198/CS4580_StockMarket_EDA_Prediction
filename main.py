@@ -1,3 +1,4 @@
+
 import pandas as pd
 import numpy as np
 import warnings
@@ -250,9 +251,4 @@ SVCTest(new_features, df, y)
 # print("PCA Accuracy: ", accuracy)
 # print("Cm: ")
 # print(cm)
-
-
-
-
-
 
